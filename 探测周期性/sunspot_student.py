@@ -97,7 +97,7 @@ def find_main_period(frequencies, power):
     """
     # TODO: 实现主周期检测
     # [STUDENT_CODE_HERE]
-    idx = np.argmax(power[0:])
+    idx = np.argmax(power[1:])+1
     main_period = 1/frequencies[idx]
     return main_period
 
