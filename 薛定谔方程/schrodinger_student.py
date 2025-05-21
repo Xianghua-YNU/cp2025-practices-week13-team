@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-薛定谔方程 - 方势阱能级计算（参考答案）
+薛定谔方程 - 方势阱能级计算
 
 本模块实现了一维方势阱中粒子能级的计算方法。
 """
@@ -28,18 +28,11 @@ def calculate_y_values(E_values, V, w, m):
     返回:
         tuple: 包含三个numpy数组 (y1, y2, y3)，分别对应三个函数在给定能量值下的函数值
     """
-    # 将能量从eV转换为J
     E_joules = E_values * EV_TO_JOULE
     V_joule = V * EV_TO_JOULE
     
-    # 计算参数，避免使用过小的数值
-    # 使用 (w^2 * m) / (2 * hbar^2) 作为一个整体计算
-    factor = (w**2 * m) / (2 * HBAR**2)
+    y1 = np.tan(np.sqrt(((w**2 * m) / (2 * HBAR**2)) * E_joules))
     
-    # 计算三个函数值
-    y1 = np.tan(np.sqrt(factor * E_joules))
-    
-    # 对于y2和y3，需要处理可能的除零错误
     with np.errstate(divide='ignore', invalid='ignore'):
         y2 = np.sqrt((V_joule - E_joules) / E_joules)
         y3 = -np.sqrt(E_joules / (V_joule - E_joules))
@@ -47,7 +40,11 @@ def calculate_y_values(E_values, V, w, m):
     # 处理无穷大和NaN值
     y1 = np.where(np.isfinite(y1), y1, np.nan)
     y2 = np.where(np.isfinite(y2), y2, np.nan)
-    y3 = np.where(np.isfinite(y3), y3, np.nan)
+    y3 = np.where(np.isfinite(y3), y3, np.nan) 
+    # TODO: 实现计算y1, y2, y3的代码 (约10行代码)
+    # [STUDENT_CODE_HERE]
+    # 提示: 注意单位转换和避免数值计算中的溢出或下溢
+    
     
     return y1, y2, y3
 
@@ -89,37 +86,10 @@ def plot_energy_functions(E_values, y1, y2, y3):
     
     return fig
 
-
-def energy_equation_even(E, V, w, m):
-    """
-    偶宇称能级方程: tan(sqrt(w^2*m*E/(2*hbar^2))) = sqrt((V-E)/E)
-    返回两边的差值，用于求根
-    """
-    E_joule = E * EV_TO_JOULE
-    V_joule = V * EV_TO_JOULE
-    factor = (w**2 * m) / (2 * HBAR**2)
-    
-    left = np.tan(np.sqrt(factor * E_joule))
-    right = np.sqrt((V_joule - E_joule) / E_joule)
-    
-    return left - right
-
-
-def energy_equation_odd(E, V, w, m):
-    """
-    奇宇称能级方程: tan(sqrt(w^2*m*E/(2*hbar^2))) = -sqrt(E/(V-E))
-    返回两边的差值，用于求根
-    """
-    E_joule = E * EV_TO_JOULE
-    V_joule = V * EV_TO_JOULE
-    factor = (w**2 * m) / (2 * HBAR**2)
-    
-    left = np.tan(np.sqrt(factor * E_joule))
-    right = -np.sqrt(E_joule / (V_joule - E_joule))
-    
-    return left - right
-
-
+    # TODO: 实现绘制三个函数曲线的代码 (约15行代码)
+    # [STUDENT_CODE_HERE]
+    # 提示: 使用不同颜色和线型，添加适当的标签、图例和标题
+       
 def find_energy_level_bisection(n, V, w, m, precision=0.001, E_min=0.001, E_max=None):
     """
     使用二分法求解方势阱中的第n个能级
@@ -140,38 +110,64 @@ def find_energy_level_bisection(n, V, w, m, precision=0.001, E_min=0.001, E_max=
         E_max = V - 0.001  # 避免在V处的奇点
     
     # 根据能级序号n选择合适的方程
-    if n % 2 == 0:  # 偶数能级 (0, 2, 4, ...)
-        equation = lambda E: energy_equation_even(E, V, w, m)
-    else:  # 奇数能级 (1, 3, 5, ...)
-        equation = lambda E: energy_equation_odd(E, V, w, m)
+    if n % 2 == 0:  # 偶数能级（偶宇称）
+        def equation(E):
+            """偶宇称方程：tan(...) - sqrt((V-E)/E)"""
+            E_joule = E * EV_TO_JOULE
+            V_joule = V * EV_TO_JOULE
+            factor = (w**2 * m) / (2 * HBAR**2)
+            left = np.tan(np.sqrt(factor * E_joule))
+            with np.errstate(divide='ignore', invalid='ignore'):
+                right = np.sqrt((V_joule - E_joule) / E_joule)
+            return np.nan_to_num(left - right, nan=np.inf, posinf=np.inf, neginf=-np.inf)
+    else:  # 奇数能级（奇宇称）
+        def equation(E):
+            """奇宇称方程：tan(...) + sqrt(E/(V-E))"""
+            E_joule = E * EV_TO_JOULE
+            V_joule = V * EV_TO_JOULE
+            factor = (w**2 * m) / (2 * HBAR**2)
+            left = np.tan(np.sqrt(factor * E_joule))
+            with np.errstate(divide='ignore', invalid='ignore'):
+                right = np.sqrt(E_joule / (V_joule - E_joule))
+            return np.nan_to_num(left + right, nan=np.inf, posinf=np.inf, neginf=-np.inf)
     
-    # 初始化搜索区间
-    a, b = E_min, E_max
+    # 生成密集的能量点，寻找函数符号变化的区间
+    num_points = 10000  # 增加采样点数量，提高找到根的概率
+    E_dense = np.linspace(E_min, E_max, num_points)
     
-    # 检查区间端点的函数值符号是否相反
-    fa, fb = equation(a), equation(b)
-    if fa * fb > 0:
-        # 如果端点函数值符号相同，需要调整搜索区间
-        # 这里简化处理，实际应用中可能需要更复杂的策略
-        # 例如，可以在区间内采样多个点，寻找函数值符号变化的区间
-        raise ValueError(f"无法在给定区间 [{a}, {b}] 内找到第 {n} 个能级")
+    # 计算函数值
+    f_values = np.array([equation(E) for E in E_dense])
+    
+    # 寻找符号变化的区间
+    intervals = []
+    for i in range(num_points - 1):
+        # 检查符号变化，并且确保不是因为tan函数的奇点导致的符号变化
+        if f_values[i] * f_values[i+1] <= 0 and np.isfinite(f_values[i]) and np.isfinite(f_values[i+1]):
+            intervals.append((E_dense[i], E_dense[i+1]))
+    
+    # 如果没有找到足够的区间，尝试细分搜索
+    if len(intervals) <= n:
+        # 尝试使用更小的初始区间
+        E_max_new = E_max * 0.9
+        print(f"警告: 未能找到足够的根区间，尝试缩小搜索范围到 {E_min} - {E_max_new} eV")
+        return find_energy_level_bisection(n, V, w, m, precision, E_min, E_max_new)
+    
+    # 选择第n个符号变化的区间
+    a, b = intervals[n]
     
     # 二分法迭代
     while (b - a) > precision:
-        c = (a + b) / 2  # 区间中点
+        c = (a + b) / 2
         fc = equation(c)
         
-        if abs(fc) < 1e-10:  # 如果中点非常接近根
+        if abs(fc) < 1e-10:  # 找到足够接近的根
             return c
         
-        if fa * fc < 0:  # 如果根在左半区间
+        if equation(a) * fc < 0:  # 根在左半区间
             b = c
-            fb = fc
-        else:  # 如果根在右半区间
+        else:  # 根在右半区间
             a = c
-            fa = fc
     
-    # 返回区间中点作为近似解
     return (a + b) / 2
 
 
@@ -203,12 +199,6 @@ def main():
     print("\n参考能级值:")
     for n, ref in enumerate(reference_levels):
         print(f"能级 {n}: {ref:.3f} eV")
-    
-    # 计算相对误差
-    print("\n相对误差:")
-    for n, (calc, ref) in enumerate(zip(energy_levels, reference_levels)):
-        rel_error = abs(calc - ref) / ref * 100
-        print(f"能级 {n}: {rel_error:.2f}%")
 
 
 if __name__ == "__main__":
