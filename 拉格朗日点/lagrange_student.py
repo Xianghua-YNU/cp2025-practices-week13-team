@@ -132,7 +132,7 @@ def secant_method(f, a, b, tol=1e-8, max_iter=100):
         return b, 0, True
     
     if fa * fb > 0:  # 确保区间端点函数值异号
-        print("警告: 区间端点函数值同号，弦截法可能不收敛")
+        print("warning: 区间端点函数值同号，弦截法可能不收敛")
     
     iterations = 0
     converged = False
@@ -145,7 +145,7 @@ def secant_method(f, a, b, tol=1e-8, max_iter=100):
         if abs(f1 - f0) < 1e-14:
             break
         
-        # 弦截法迭代公式
+        # 弦截法迭代
         x2 = x1 - f1 * (x1 - x0) / (f1 - f0)
         f2 = f(x2)
         
@@ -208,7 +208,6 @@ def plot_lagrange_equation(r_min, r_max, num_points=1000):
     # 添加水平和垂直参考线
     ax.axhline(y=0, color='k', linestyle='--', alpha=0.3)
     
-    # 设置坐标轴标签和标题
     ax.set_xlabel('Distance from Earth center (10^8 m)')
     ax.set_ylabel('Equation value')
     ax.set_title('L1 Lagrange Point Equation')
@@ -218,7 +217,6 @@ def plot_lagrange_equation(r_min, r_max, num_points=1000):
     unique_labels = dict(zip(labels, handles))
     ax.legend(unique_labels.values(), unique_labels.keys())
     
-    # 添加网格
     ax.grid(True, alpha=0.3)
     
     return fig
@@ -235,7 +233,7 @@ def main():
     plt.savefig('lagrange_equation.png', dpi=300)
     plt.show()
     
-    # 2. 使用牛顿法求解
+    # 2. 牛顿法求解
     print("\n使用牛顿法求解L1点位置:")
     r0_newton = 3.5e8  # 初始猜测值 (m)，大约在地月距离的90%处
     r_newton, iter_newton, conv_newton = newton_method(lagrange_equation, lagrange_equation_derivative, r0_newton)
@@ -244,7 +242,7 @@ def main():
         print(f"  迭代次数: {iter_newton}")
         print(f"  相对于地月距离的比例: {r_newton/R:.6f}")
     else:
-        print("  牛顿法未收敛!")
+        print("  牛顿法不收敛!")
     
     # 3. 使用弦截法求解
     print("\n使用弦截法求解L1点位置:")
