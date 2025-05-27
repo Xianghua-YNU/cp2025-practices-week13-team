@@ -21,7 +21,9 @@ def load_sunspot_data(url):
     """
     # TODO: 使用np.loadtxt读取数据，只保留第2(年份)和3(太阳黑子数)列
     # [STUDENT_CODE_HERE]
-    raise NotImplementedError("请在 {} 中实现此函数".format(__file__))
+    data = np.loadtxt(url, usecols=(2,3), comments='#')
+    years = data[:,0]
+    sunspots = data[:,1]
     return years, sunspots
 
 def plot_sunspot_data(years, sunspots):
@@ -34,7 +36,14 @@ def plot_sunspot_data(years, sunspots):
     """
     # TODO: 实现数据可视化
     # [STUDENT_CODE_HERE]
-    raise NotImplementedError("请在 {} 中实现此函数".format(__file__))
+    plt.figure(figsize=(12, 6))
+    plt.plot(years, sunspots)
+    plt.xlabel('Year')
+    plt.ylabel('Sunspot Number')
+    plt.title('Sunspot Number Variation (1749-Present)')
+    plt.grid(True)
+    plt.show()
+
 
 def compute_power_spectrum(sunspots):
     """
@@ -48,7 +57,12 @@ def compute_power_spectrum(sunspots):
     """
     # TODO: 实现傅里叶变换和功率谱计算
     # [STUDENT_CODE_HERE]
-    raise NotImplementedError("请在 {} 中实现此函数".format(__file__))
+    n = sunspots.size
+    fft_result = np.fft.fft(sunspots)
+    
+    # 计算功率谱 (只取正频率部分)
+    power = np.abs(fft_result[:n//2])**2
+    frequencies = np.fft.fftfreq(n, d=1)[:n//2] 
     return frequencies, power
 
 def plot_power_spectrum(frequencies, power):
@@ -61,7 +75,14 @@ def plot_power_spectrum(frequencies, power):
     """
     # TODO: 实现功率谱可视化
     # [STUDENT_CODE_HERE]
-    raise NotImplementedError("请在 {} 中实现此函数".format(__file__))
+    plt.figure(figsize=(12, 6))
+    plt.plot(1/frequencies[1:], power[1:])  # 忽略零频率
+    plt.xlabel('Period (months)')
+    plt.ylabel('Power')
+    plt.title('Power Spectrum of Sunspot Data')
+    plt.grid(True)
+    plt.show()
+
 
 def find_main_period(frequencies, power):
     """
@@ -76,12 +97,13 @@ def find_main_period(frequencies, power):
     """
     # TODO: 实现主周期检测
     # [STUDENT_CODE_HERE]
-    raise NotImplementedError("请在 {} 中实现此函数".format(__file__))
+    idx = np.argmax(power[1:])+1
+    main_period = 1/frequencies[idx]
     return main_period
 
 def main():
     # 数据文件路径
-    data = "sunspot_data.txt"
+    data ="C:/school/computational_physics/SN_m_tot_V2.0.txt"
     
     # 1. 加载并可视化数据
     years, sunspots = load_sunspot_data(data)
